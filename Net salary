@@ -1,0 +1,148 @@
+
+// const taxRates = {
+//     PAYE: {
+//         effectiveFrom: '1 July 2023',
+//         rates: [
+//             { monthly: 'Up to 24,000', annual: 'Up to 288,000', rate: 10.0 },
+//             { monthly: '24,001 - 32,333', annual: '288,001 - 388,000', rate: 25.0 },
+//             { monthly: '32,334 - 500,000', annual: '388,001 - 6,000,000', rate: 30.0 },
+//             { monthly: '500,001 - 800,000', annual: '6,000,001 - 9,600,000', rate: 32.5 },
+//             { monthly: 'Above 800,000', annual: 'Above 9,600,000', rate: 35.0 }
+//         ],
+//         personalRelief: { monthly: 2400, annual: 28800, effectiveSince: '25 April 2020' },
+//         insuranceRelief: { monthly: 5000, annual: 60000, effectiveSince: '1 January 2007' },
+//         pensionContribution: { monthly: 20000, annual: 240000, effectiveSince: '1 January 2006' },
+//         affordableHousingRelief: { monthly: 9000, annual: 108000, effectiveSince: '1 July 2018' },
+//         disabilityExemption: { amount: 150000, annual: 1800000, effectiveSince: '10 March 2010' }
+//     },
+//     fringeBenefitTax: {
+//         marketInterestRates: {
+//             '2024': { Q1: 15, Q2: 16, Q3: 16, Q4: '-' },
+//             '2023': { Q1: 9, Q2: 10, Q3: 11, Q4: 13 }
+//         }
+//     },
+//     NHIF: {
+//         effectiveFrom: '1 April 2015',
+//         rates: [
+//             { grossPay: 'Up to 5,999', deduction: 150 },
+//             { grossPay: '6,000 - 7,999', deduction: 300 },
+//             { grossPay: '8,000 - 11,999', deduction: 400 },
+//             { grossPay: '12,000 - 14,999', deduction: 500 },
+//             { grossPay: '15,000 - 19,999', deduction: 600 },
+//             { grossPay: '20,000 - 24,999', deduction: 750 },
+//             { grossPay: '25,000 - 29,999', deduction: 850 },
+//             { grossPay: '30,000 - 34,999', deduction: 900 },
+//             { grossPay: '35,000 - 39,999', deduction: 950 },
+//             { grossPay: '40,000 - 44,999', deduction: 1000 },
+//             { grossPay: '45,000 - 49,999', deduction: 1100 },
+//             { grossPay: '50,000 - 59,999', deduction: 1200 },
+//             { grossPay: '60,000 - 69,999', deduction: 1300 },
+//             { grossPay: '70,000 - 79,999', deduction: 1400 },
+//             { grossPay: '80,000 - 89,999', deduction: 1500 },
+//             { grossPay: '90,000 - 99,999', deduction: 1600 },
+//             { grossPay: '100,000 and above', deduction: 1700 }
+//         ]
+//     },
+//     NSSF: {
+//         tiers: {
+//             TierI: { maxPensionablePay: 7000, effectiveFrom: 'February 2024' },
+//             TierII: { minPensionablePay: 7001, maxPensionablePay: 36000, effectiveFrom: 'February 2024' }
+//         }
+//     },
+//     housingLevy: {
+//         effectiveFrom: '19 March 2024',
+//         rate: 1.5,
+//         notes: 'Employee and employer each pay 1.5% of monthly gross salary. Payment qualifies for affordable housing relief.'
+//     }
+// };
+
+// console.log(taxRates);
+
+//Function to calculate deductions and net salary
+function calculateNetSalary(basicSalary, benefits) {
+    // Constants for deductions
+    const NHIFRates = [
+        { max: 5999, deduction: 150 },
+        { max: 7999, deduction: 300 },
+        { max: 11999, deduction: 400 },
+        { max: 14999, deduction: 500 },
+        { max: 19999, deduction: 600 },
+        { max: 24999, deduction: 750 },
+        { max: 29999, deduction: 850 },
+        { max: 34999, deduction: 900 },
+        { max: 39999, deduction: 950 },
+        { max: 44999, deduction: 1000 },
+        { max: 49999, deduction: 1100 },
+        { max: 59999, deduction: 1200 },
+        { max: 69999, deduction: 1300 },
+        { max: 79999, deduction: 1400 },
+        { max: 89999, deduction: 1500 },
+        { max: 99999, deduction: 1600 },
+        { deduction: 1700 } // for 100,000 and above
+    ];
+
+    const NSSFContribution = (salary) => {
+        if (salary <= 7000) return salary * 0.06; // Tier I
+        if (salary <= 36000) return 420; // Tier II flat rate
+        return 420; // For salaries above Tier II cap
+    };
+
+    const getNHIFDeduction = (salary) => {
+        for (let rate of NHIFRates) {
+            if (salary <= (rate.max || Infinity)) {
+                return rate.deduction;
+            }
+        }
+        return 0;
+    };
+
+    // Calculate Gross Salary
+    const grossSalary = basicSalary + benefits;
+
+    // Calculate NSSF Deduction
+    const nssfDeduction = NSSFContribution(basicSalary);
+
+    // Calculate NHIF Deduction
+    const nhifDeduction = getNHIFDeduction(grossSalary);
+
+    // Calculate PAYE
+    let paye = 0;
+    const taxableIncome = grossSalary - nssfDeduction - nhifDeduction; // Taxable income after deductions
+
+    if (taxableIncome <= 288000) {
+        paye = taxableIncome * 0.1;
+    } else if (taxableIncome <= 388000) {
+        paye = 28800 + (taxableIncome - 288000) * 0.25;
+    } else if (taxableIncome <= 6000000) {
+        paye = 28800 + 25000 + (taxableIncome - 388000) * 0.3;
+    } else if (taxableIncome <= 9600000) {
+        paye = 28800 + 25000 + 633600 + (taxableIncome - 6000000) * 0.325;
+    } else {
+        paye = 28800 + 25000 + 633600 + 1175000 + (taxableIncome - 9600000) * 0.35;
+    }
+
+    // Calculate Net Salary
+    const netSalary = grossSalary - (paye + nhifDeduction + nssfDeduction);
+
+    return {
+        grossSalary: grossSalary.toFixed(2),
+        paye: paye.toFixed(2),
+        nhifDeduction: nhifDeduction.toFixed(2),
+        nssfDeduction: nssfDeduction.toFixed(2),
+        netSalary: netSalary.toFixed(2)
+    };
+}
+
+// Example Input
+const basicSalary = parseFloat(`1500` );
+const benefits = parseFloat(`2100` );
+
+// Calculate and display results
+const result = calculateNetSalary(basicSalary, benefits);
+console.log("Gross Salary", result.grossSalary);
+console.log("PAYE Tax: Ksh", result.paye);
+console.log("NHIF Deduction: Ksh", result.nhifDeduction);
+console.log("NSSF Deduction: Ksh", result.nssfDeduction);
+console.log( "Net Salary" , result.netSalary);
+
+
